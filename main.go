@@ -82,14 +82,16 @@ func main() {
 			}
 			defer res.Body.Close()
 
-			var response objx.Map
+			var response interface{}
 			if err = json.NewDecoder(res.Body).Decode(&response); err != nil {
 				resBod, _ := ioutil.ReadAll(res.Body)
+				log("Error: %s", err)
 				log("Status: %d", res.StatusCode)
 				log("%s\n", string(resBod))
 				fatal("Failed to process response.")
 			} else {
-				log("Created %g resource(s)", objx.Map(response.Get("~changes").MSI()).Get("~created").Float64())
+				log("Response: %s", response)
+				log("Created %g resource(s)", objx.Map(response.(objx.Map).Get("~changes").MSI()).Get("~created").Float64())
 			}
 
 			if res.StatusCode > 299 {
