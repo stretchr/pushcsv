@@ -1,13 +1,16 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/stretchr/objx"
 	"github.com/stretchr/pushcsv/io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 /*
@@ -66,28 +69,28 @@ func main() {
 			lineData = append(lineData, linesBuffer[:intoBuffer]...)
 			payload := strings.Join(lineData, "\n")
 
-			log("POST %s", *url)
-			log("%s", payload)
-			log("...")
-
 			req, err := http.NewRequest("POST", *url, strings.NewReader(payload))
 			if err != nil {
 				fatal("Request is invalid: ", err)
 			}
 			req.Header.Set("Content-Type", "text/csv")
+			req.Header.Set("Accept", "application/json")
 
-			log("Making request: %s", req)
 			res, err := http.DefaultClient.Do(req)
 			if err != nil {
 				fatal("Unable to make request: ", err)
 			}
 			defer res.Body.Close()
 
-			resBod, _ := ioutil.ReadAll(res.Body)
-			log("Status: %d", res.StatusCode)
-			log("%s\n", string(resBod))
-			log("")
-			log("")
+			var response objx.Map
+			if err = json.NewDecoder(res.Body).Decode(&response); err != nil {
+				resBod, _ := ioutil.ReadAll(res.Body)
+				log("Status: %d", res.StatusCode)
+				log("%s\n", string(resBod))
+				fatal("Failed to process response.")
+			} else {
+				log("Created %g resource(s)", objx.Map(response.Get("~changes").MSI()).Get("~created").Float64())
+			}
 
 			if res.StatusCode > 299 {
 				log("Cancelling... something went wrong.")
@@ -96,6 +99,8 @@ func main() {
 
 			// reset
 			intoBuffer = 0
+
+			time.Sleep(1 * time.Second)
 
 		}
 
