@@ -91,7 +91,8 @@ func main() {
 				fatal("Failed to process response.")
 			} else {
 				log("Response: %s", response)
-				log("Created %g resource(s)", objx.Map(response.(objx.Map).Get("~changes").MSI()).Get("~created").Float64())
+				res := objx.Map(response.(map[string]interface{}))
+				log("Created %g resource(s)", res.Get("~changes.~created").Float64())
 			}
 
 			if res.StatusCode > 299 {
